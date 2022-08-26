@@ -23,17 +23,9 @@ ABoid::ABoid()
 	};
 	static FConstructorStatics ConstructorStatics;
  	
-	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	RootComponent = Root;
-
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-	Mesh->SetStaticMesh(ConstructorStatics.TriangleBoid.Get());
-	Mesh->SetRelativeScale3D(FVector(0.15f, 0.15f, 0.3f));
-	Mesh->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
-	Mesh->SetupAttachment(this->GetRootComponent());
 	Mat = nullptr;
+	
+	SkeletalMeshScale = 0.1f;
 	InitialVelocity = FVector(20.0f, 0.0f, 0.0f);
 	Velocity = InitialVelocity;
 	ViewAngle = 120.0f;
@@ -43,6 +35,17 @@ ABoid::ABoid()
 	WanderSphereProjectionDistance = 100.0f;
 	WanderIntensity = 10.0f;
 	SteeringForce = FMath::VRand()*WanderSphereSize;
+	
+
+	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
+
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkelMesh"));
+	SkeletalMesh->SetRelativeScale3D(FVector(SkeletalMeshScale, SkeletalMeshScale, SkeletalMeshScale));
+	SkeletalMesh->SetupAttachment(this->GetRootComponent());
+	SkeletalMesh->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 	//This is now a point on a sphere 
 	//SteeringForce = SteeringForce + (Velocity.Normalize()*WanderSphereProjectionDistance);
 }
@@ -75,7 +78,7 @@ void ABoid::Initialize(FVector StartingPosition, FVector StartingVelocity, float
 	WanderSphereSize = InWanderSphereSize;
 	WanderSphereProjectionDistance = InWanderSphereProjectionDistance;
 	WanderIntensity =InWanderIntensity;
-	Mesh->SetMaterial(0, UMaterialInstanceDynamic::Create(InMaterial, this, FName("MID_Boid")));
+	SkeletalMesh->SetMaterial(0, UMaterialInstanceDynamic::Create(InMaterial, this, FName("MID_Boid")));
 	this->SetActorLocation(StartingPosition);
 	if (!StartingVelocity.IsNearlyZero())
 	{
@@ -160,13 +163,13 @@ void ABoid::UpdateMovement(float DeltaTime)
 		if (UMathUtilities::GetAngleBetweenVectors(Velocity, AvgVelocity) >= 10.0f)
 		{
 			Velocity = FMath::VInterpTo(Velocity, AvgVelocity, DeltaTime, Handling);
-			Mesh->SetVectorParameterValueOnMaterials(FName("Color"), FVector(0, 1, 0));
+			SkeletalMesh->SetVectorParameterValueOnMaterials(FName("Color"), FVector(0, 1, 0));
 		}
 		// If not, try to become the center of the group if I feel "far away"
 		else if ((AvgPosition - this->GetActorLocation()).Size() > 50.0 + (15.0f * FlockSize))
 		{
 			Velocity = FMath::VInterpTo(Velocity, (AvgPosition - this->GetActorLocation()), DeltaTime, Handling);
-			Mesh->SetVectorParameterValueOnMaterials(FName("Color"), FVector(1, 0, 0));
+			SkeletalMesh->SetVectorParameterValueOnMaterials(FName("Color"), FVector(1, 0, 0));
 		}
 		// Angle slightly towards the average position of the flock.
 		//Add some Speed because we will tend to slow down when flocking
@@ -183,7 +186,7 @@ void ABoid::UpdateMovement(float DeltaTime)
 	else
 	{
 		DesireToWander = 3.0f;
-		Mesh->SetVectorParameterValueOnMaterials(FName("Color"), FVector(0, 0, 1));
+		SkeletalMesh->SetVectorParameterValueOnMaterials(FName("Color"), FVector(0, 0, 1));
 	}
 
 	//Wander Behavior:

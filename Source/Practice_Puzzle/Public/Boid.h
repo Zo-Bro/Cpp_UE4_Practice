@@ -6,22 +6,24 @@
 #include "GameFramework/Actor.h"
 #include "Boid.generated.h"
 
+//ToDo: swap out static mesh for a skeletal mesh, and try to get all the boids to be birds!
+
 UCLASS()
 class PRACTICE_PUZZLE_API ABoid : public AActor
 {
 	GENERATED_BODY()
 		
-		UPROPERTY(EditDefaultsOnly, Category=Rendering)
-		class UStaticMeshComponent* Mesh;
+		UPROPERTY(EditDefaultsOnly, Category=Character)
+		class USkeletalMeshComponent* SkeletalMesh;
+
 		AVolume* BoundingVolume;
-	// an actor
-	//UPROPERTY(EditDefaultsOnly, Category = Movement)
-	//	class AActor* Bounds;
 public:	
 	// Sets default values for this actor's properties
 	ABoid();
 
 private:
+	UPROPERTY(EditDefaultsOnly, Category = Character)
+		float SkeletalMeshScale;
 	UPROPERTY(EditAnywhere, Category = Movement)
 		FVector InitialVelocity;
 	UPROPERTY(EditAnywhere, Category = Movement)

@@ -19,6 +19,9 @@ class PRACTICE_PUZZLE_API ABoidSpawningVolume : public AVolume
 public:
 	ABoidSpawningVolume();
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ABoid> Boid;
+
 	UPROPERTY(EditAnywhere, Category = Boids)
 		int NumberOfBoidsToSpawn;
 	UPROPERTY(EditAnywhere, Category = Movement)

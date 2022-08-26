@@ -26,20 +26,21 @@ void ABoidSpawningVolume::BeginPlay()
 	FBoxSphereBounds MyBounds = GetBounds();
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	for (int i = 0; i < NumberOfBoidsToSpawn;  i++)
+	if (Boid)
 	{
-		FVector RandLocation = FVector::ZeroVector;
-		RandLocation = UKismetMathLibrary::RandomPointInBoundingBox(MyBounds.Origin, MyBounds.BoxExtent);
-		
-		ABoid* TempBoid = GetWorld()->SpawnActor<ABoid>(SpawnInfo);
-		float NewSpeed = FMath::RandRange(MinSpeed, MaxSpeed);
-		FVector NewVelocity = UKismetMathLibrary::RandomUnitVector();
+		for (int i = 0; i < NumberOfBoidsToSpawn; i++)
+		{
+			FVector RandLocation = FVector::ZeroVector;
+			RandLocation = UKismetMathLibrary::RandomPointInBoundingBox(MyBounds.Origin, MyBounds.BoxExtent);
 
-		TempBoid->Initialize(RandLocation, NewVelocity, NewSpeed,
-			Handling, ViewAngle, ViewDistance, WanderSphereSize,
-			WanderSphereProjectionDistance, WanderIntensity,
-			Mat, 0, this);
+			ABoid* TempBoid = GetWorld()->SpawnActor<ABoid>(Boid, SpawnInfo);
+			float NewSpeed = FMath::RandRange(MinSpeed, MaxSpeed);
+			FVector NewVelocity = UKismetMathLibrary::RandomUnitVector();
 
+			TempBoid->Initialize(RandLocation, NewVelocity, NewSpeed,
+				Handling, ViewAngle, ViewDistance, WanderSphereSize,
+				WanderSphereProjectionDistance, WanderIntensity,
+				Mat, 0, this);
+		}
 	}
 }
