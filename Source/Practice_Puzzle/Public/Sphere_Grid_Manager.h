@@ -5,63 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Sphere_Grid_Manager.generated.h"
-/*
-USTRUCT() 
-struct FSphereGridMember
-{
-	GENERATED_BODY()
 
-	UPROPERTY()
-		UStaticMeshComponent* SphereMesh;
-	UPROPERTY()
-		int xPos;
-	UPROPERTY()
-		int yPos;
-	UPROPERTY()
-		int zPos;
-	UPROPERTY()
-		FVector velocity;
-	UPROPERTY()
-		FVector accel;
-	UPROPERTY()
-		FVector startingLocation;
-	UPROPERTY()
-		//declare pointer to a float.
-		float delay;
-
-	FSphereGridMember()
-	{
-		SphereMesh = nullptr;
-		xPos = 0; yPos = 0; zPos = 0; 
-		velocity = FVector::ZeroVector; 
-		accel = FVector::ZeroVector;
-		startingLocation = FVector::ZeroVector;
-		//set the value of the float that is pointed at by delay.
-		delay = 0.0f;
-		
-	}
-
-	FSphereGridMember(UStaticMeshComponent* InMeshComp, int inX, int inY, int inZ)
-	{
-		if (IsValid(InMeshComp))
-		{
-			SphereMesh = InMeshComp;
-			startingLocation = SphereMesh->GetRelativeLocation();
-		}
-		else
-		{
-			SphereMesh = nullptr;
-			startingLocation = FVector::ZeroVector;
-			UE_LOG(LogCore, Warning, TEXT("Supplied StaticMesh was invalid."))
-		}
-		xPos = inX; yPos = inY; zPos = inZ;
-		velocity = FVector::ZeroVector;
-		accel = FVector::ZeroVector;
-		delay = 0.0f;
-
-	}
-};
-*/
 UCLASS()
 class PRACTICE_PUZZLE_API USphereGridMember : public UObject
 {

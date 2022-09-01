@@ -151,9 +151,7 @@ void ASphere_Grid_Manager::Tick(float DeltaTime)
 				Offset = FVector::Distance(Locator->GetRelativeLocation(), CachedLocation) / (Size*Spacing);
 				Member->accel.Normalize();
 				Member->accel = Member->accel * FMath::Sin((GetWorld()->GetRealTimeSeconds() * Speed) + Offset) * Amplitude;
-				// Currently, there is no "anchor" for the nodes, and so while the locator moves around
-				// they slowly drift from their original locations. 
-				//Would be cool if they never went farther than X amount of units away
+
 				Member->SphereMesh->SetVectorParameterValueOnMaterials(FName("LocatorPositionAbs"), Locator->GetComponentLocation());
 				Member->velocity = Member->accel * DeltaTime;
 				Member->SphereMesh->SetRelativeLocation(Member->SphereMesh->GetRelativeLocation() + Member->velocity);
@@ -179,9 +177,6 @@ void ASphere_Grid_Manager::Tick(float DeltaTime)
 					AveragePosition = AveragePosition / NearbyBoids.Num(); // World Position
 					// Get the vector that points away from the average position of boids
 					VecFromBoidsToSphereComp = this->GetActorLocation() + Member->SphereMesh->GetRelativeLocation() - AveragePosition;
-					// Resize the Magnitude of the vector so that the farther away the boids are, the smaller this vector is.
-					// This is currently inverting the direction a bit.
-					// VecFromBoidsToSphereComp = ((((SphereDiameter / 2) + ViewDistance) - VecFromBoidsToSphereComp.Size()) / VecFromBoidsToSphereComp.Size()) * VecFromBoidsToSphereComp;
 					//Clamp the magnitude of this vector so it will never push the sphere out past 100 units
 					VecFromBoidsToSphereComp = VecFromBoidsToSphereComp.GetClampedToMaxSize(100.0f - (Member->SphereMesh->GetRelativeLocation() - Member->startingLocation).Size());
 
@@ -189,19 +184,6 @@ void ASphere_Grid_Manager::Tick(float DeltaTime)
 					FinalPosition = FMath::VInterpTo(Member->SphereMesh->GetRelativeLocation(), Member->SphereMesh->GetRelativeLocation() + VecFromBoidsToSphereComp, DeltaTime, 1.0f);
 					Member->SphereMesh->SetRelativeLocation(FinalPosition);
 
-					// Member->delay never actually changes because
-					// the struct is getting passed by value, and so changes disappear after exiting one of these scopes (I think the for loop, but could be this case)
-					// but I dont understand how to have an array of pointers to structs
-					// because that causes an error of "cant have exposed pointers to this data type" or something.
-					// this can be fixed by maintaining an array just for the delay timers (probably) 
-					// but I wanted to figure out how to make the var in the struct work.
-					// I need to somehow get an array of references to the structs instead. References are just aliases to the variable at its original location in memory
-					// perhaps I need a "get" function that outputs the array of references into a temp array of references in this function?
-					// Nothing fucking works. I cant get a reference to the structs, or a pointer, or anything.
-					// A Struct seems like a way you would hold a bunch of dynamic data that you update and pass around.
-					// this should definitely be possible. 
-					// but none of the setups I try, whether I store pointers or references to the structs works.
-					// They always complain about either being illegal to have a bare pointer or some other thing.
 					Member->delay = 0.0f;
 
 				}

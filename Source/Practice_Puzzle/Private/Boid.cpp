@@ -8,6 +8,34 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "UObject/ConstructorHelpers.h"
 
+UBoidMovementComponent::UBoidMovementComponent()
+{
+	bShouldFlap = true;
+	desireToFlap = 0.f;
+	flapIncrement = 0.25f;
+	flapForce = 15.f;
+	flapTimeoutLength = 0.5f;
+	bCanFlap = false;
+	flapTimerHandle = FTimerHandle();
+}
+
+void UBoidMovementComponent::IncrementWantToFlap()
+{
+	desireToFlap += flapIncrement;
+}
+
+void UBoidMovementComponent::EndFlapTimeout()
+{
+	flapTimerHandle.Invalidate();
+	bCanFlap = true;
+}
+
+void UBoidMovementComponent::Flap()
+{
+	bCanFlap = false;
+	bShouldFlap = false;
+}
+
 
 // Sets default values
 ABoid::ABoid()
@@ -36,6 +64,7 @@ ABoid::ABoid()
 	WanderIntensity = 10.0f;
 	SteeringForce = FMath::VRand()*WanderSphereSize;
 	
+	MovementComponent = CreateDefaultSubobject<UBoidMovementComponent>(TEXT("MovementComponent"));
 
 	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	RootComponent = Root;
@@ -129,15 +158,13 @@ void ABoid::UpdateMovement(float DeltaTime)
 			ABoid* TempBoid = Cast<ABoid>(Boid);
 			if (TempBoid)
 			{
-				//arccosine((vecA * vecB) / (vecA.Size() * vecB.Size()))
 				FVector TempLoc = TempBoid->GetActorLocation();
 				FVector MyLoc = this->GetActorLocation();
 				FVector TempBoidLocRelativeToMe = FVector(TempLoc.X - MyLoc.X, TempLoc.Y - MyLoc.Y, TempLoc.Z - MyLoc.Z);
 				float AngleBetweenMeAndOther = UMathUtilities::GetAngleBetweenVectors(Velocity, TempBoidLocRelativeToMe);
-				//float AngleBetweenMeAndOther = FMath::Acos(FVector::DotProduct(Velocity, TempBoidLocRelativeToMe) / (Velocity.Size() * TempBoidLocRelativeToMe.Size()));
 				//only add boid if the angle formed by my forward vector and the vector formed by my position to theirs is within threshold
 				
-				//ToDo: only try to sync up if the flock is moving in a "similar" direction as me.
+				//only try to sync up if the flock is moving in a "similar" direction as me.
 				float DifferenceInDirection = UMathUtilities::GetAngleBetweenVectors(Velocity, TempBoid->Velocity);
 				if (AngleBetweenMeAndOther <= 120.0f && DifferenceInDirection <= 45.0f)
 				{
@@ -210,11 +237,18 @@ void ABoid::UpdateMovement(float DeltaTime)
 
 	//APPLY VELOCITY (ACTUALLY MOVE THE ACTOR)
 	//Calculate Final Position
+	if (this->MovementComponent->bShouldFlap)
+	{
+		FVector FlapForce = FVector(0.f, 0.f, this->MovementComponent->flapForce);
+		Velocity = Velocity + FlapForce;
+		Flap();
+		this->MovementComponent->Flap();
+	}
 	DeltaMovement = Velocity * DeltaTime;
 	FinalPosition = this->GetActorLocation() + DeltaMovement;
 	//Set Rotation
 	this->SetActorRotation(UKismetMathLibrary::FindLookAtRotation(this->GetActorLocation(), FinalPosition));
-	//Check if I need to be warped because my final position is out of bounds
+	//Check if I need to bank hard because my final position is out of bounds
 	//This will warp across the origin, which looks kind of weird
 	// would be nice to warp across perpendicular to the plane you collided with
 	FVector OffsetToApply = FVector::ZeroVector;
@@ -224,6 +258,25 @@ void ABoid::UpdateMovement(float DeltaTime)
 		// use 1.9 instead of 2 so we dont accidentally warp out of bounds
 		OffsetToApply = OffsetToApply * 1.9f;
 	}
-	//Then move to new position
-	this->SetActorLocation(FinalPosition + OffsetToApply);
+	//apply gravity (units per second / time passed)
+	FVector Gravity = FVector(0.f, 0.f, -(98.0f / DeltaTime));
+	FinalPosition = FinalPosition + OffsetToApply + Gravity;
+	
+	//see if we should flap
+	// flap because near ground
+	if (BoundingVolume && BoundingVolume->GetBounds().GetBox().Min.Z + 50.f > FinalPosition.Z)
+	{
+		this->MovementComponent->bShouldFlap = true;
+	}
+	// flap just because
+	if (FMath::RandRange(0.f, 1.f) > this->MovementComponent->desireToFlap)
+	{
+		this->MovementComponent->bShouldFlap = true;
+		this->MovementComponent->desireToFlap = 0.f;
+	}
+	else
+	{
+		this->MovementComponent->IncrementWantToFlap();
+	}
+	this->SetActorLocation(FinalPosition);
 }

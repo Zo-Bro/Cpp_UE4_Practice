@@ -9,6 +9,44 @@
 //ToDo: swap out static mesh for a skeletal mesh, and try to get all the boids to be birds!
 
 UCLASS()
+class PRACTICE_PUZZLE_API UBoidMovementComponent : public UObject
+{
+public:
+	GENERATED_BODY()
+		/*
+		A grouping of variables that are needed by the boid to fly
+		*/
+
+		//Wing Flap
+		UPROPERTY()
+		bool bShouldFlap;
+		UPROPERTY()
+		float desireToFlap;
+		//How much to increase flap desire per second
+		UPROPERTY()
+		float flapIncrement;
+		UPROPERTY()
+		float flapForce;
+		UPROPERTY()
+		float flapTimeoutLength;
+		UPROPERTY()
+		bool bCanFlap;
+		UPROPERTY()
+		FTimerHandle flapTimerHandle;
+public:
+	UBoidMovementComponent();
+
+public:
+	void IncrementWantToFlap();
+	
+	void Flap();
+	
+	void EndFlapTimeout();
+};
+
+
+
+UCLASS()
 class PRACTICE_PUZZLE_API ABoid : public AActor
 {
 	GENERATED_BODY()
@@ -52,6 +90,11 @@ private:
 	// How far away from the nose of the boid the wander sphere is
 	UPROPERTY(EditAnywhere, Category = Movement)
 		float WanderSphereProjectionDistance;
+
+	//Animation
+	UPROPERTY()
+	UBoidMovementComponent* MovementComponent;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -69,4 +112,14 @@ private:
 
 	UFUNCTION()
 		virtual void UpdateMovement(float DeltaTime);
+
+public:
+	//Animation Events
+	UFUNCTION(BlueprintCallable)
+	UBoidMovementComponent* GetMovementComponent() {return MovementComponent; }
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void Flap();
+
+
 };
